@@ -1,5 +1,5 @@
 /****************************************************************************
- * boards/arm/stm32/common/src/stm32_bh1750.c
+ * include/nuttx/ioexpander/pcf8575.h
  *
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -18,70 +18,62 @@
  *
  ****************************************************************************/
 
+#ifndef __INCLUDE_NUTTX_IOEXPANDER_PCF8575_H
+#define __INCLUDE_NUTTX_IOEXPANDER_PCF8575_H
+
 /****************************************************************************
  * Included Files
  ****************************************************************************/
 
 #include <nuttx/config.h>
-
-#include <errno.h>
-#include <debug.h>
-#include <stdio.h>
-
-#include <nuttx/spi/spi.h>
-#include <arch/board/board.h>
-#include <nuttx/sensors/bh1750fvi.h>
-
-#include "stm32.h"
-#include "stm32_i2c.h"
+#include <stdint.h>
 
 /****************************************************************************
- * Pre-processor Definitions
+ * Public Types
+ ****************************************************************************/
+
+/* A reference to a structure of this type must be passed to the PCF8575xx
+ * driver when the driver is instantiated. This structure provides
+ * information about the configuration of the PCF8575xx and provides some
+ * board-specific hooks.
+ *
+ * Memory for this structure is provided by the caller.  It is not copied by
+ * the driver and is presumed to persist while the driver is active. The
+ * memory must be writeable because, under certain circumstances, the driver
+ * may modify the frequency.
+ */
+
+struct pcf8575_config_s
+{
+  /* Device characterization */
+
+  uint8_t address;     /* 7-bit I2C address (only bits 0-6 used) */
+  uint32_t frequency;  /* I2C frequency */
+};
+
+/****************************************************************************
+ * Public Function Prototypes
  ****************************************************************************/
 
 /****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: stm32_bh1750initialize
+ * Name: pcf8575_initialize
  *
  * Description:
- *   Initialize and register the BH1750FVI Ambient Light driver.
+ *   Instantiate and configure the PCF8575xx device driver to use the
+ *   provided I2C device instance.
  *
  * Input Parameters:
- *   devno - The device number, used to build the device path as /dev/lightN
- *   busno - The I2C bus number
+ *   i2c     - An I2C driver instance
+ *   minor   - The device i2c address
+ *   config  - Persistent board configuration data
  *
  * Returned Value:
- *   Zero (OK) on success; a negated errno value on failure.
+ *   an ioexpander_dev_s instance on success, NULL on failure.
  *
  ****************************************************************************/
 
-int board_bh1750_initialize(int devno, int busno)
-{
-  struct i2c_master_s *i2c;
-  int ret;
+struct i2c_master_s;
+FAR struct ioexpander_dev_s *pcf8575_initialize(FAR struct i2c_master_s *i2c,
+                                        FAR struct pcf8575_config_s *config);
 
-  sninfo("Initializing BH1750FVI!\n");
-
-  /* Initialize I2C */
-
-  i2c = stm32_i2cbus_initialize(busno);
-
-  if (!i2c)
-    {
-      return -ENODEV;
-    }
-
-  /* Then register the ambient light sensor */
-
-  ret = bh1750fvi_register(devpath, i2c, BH1750FVI_I2C_ADDR);
-  if (ret < 0)
-    {
-      snerr("ERROR: Error registering BH1750FVI\n");
-    }
-
-  return ret;
-}
-
+#endif /* __INCLUDE_NUTTX_IOEXPANDER_PCF8575_H */
